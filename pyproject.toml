@@ -1,0 +1,111 @@
+[build-system]
+requires = ["setuptools", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "docker-container-domain-connector"
+description = "Local DNS server for exposing docker containers on bridge networks"
+authors = [
+    {name = "Nicholas Hairs", email = "info+dcdc@nicholashairs.com"},
+]
+
+# Dependency Information
+requires-python = ">=3.8"
+dependencies = [
+    "docker",
+    "netifaces",
+    "nserver",
+    "pillar"
+]
+
+# Extra information
+readme = "README.md"
+license = {text = "MIT License"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: Name Service (DNS)",
+    "Topic :: System :: Networking",
+    "Typing :: Typed",
+]
+
+dynamic = ["version"]
+
+[project.urls]
+# homepage = "https://nhairs.github.io/docker-container-domain-connector/latest/"
+GitHub = "https://github.com/nhairs/docker-container-domain-connector"
+
+[project.optional-dependencies]
+dev = [
+    ## Lint
+    "validate-pyproject[all]",
+    "black",
+    "pylint",
+    "mypy",
+    ## Test
+    "pytest",
+    ## Build
+    "build",
+    "setuptools",
+    "setuptools_scm",
+]
+
+[project.scripts]
+dcdc = "dcdc.application:main"
+
+[tool.setuptools.package-data]
+dcdc = ["py.typed"]
+
+[tool.setuptools_scm]
+git_describe_command = [
+    "git",
+    "describe",
+    "--dirty",
+    "--tags",
+    "--abbrev=40",
+    "--long",
+    "--match",
+    "*[0-9]*",
+]
+version_file = "src/dcdc/_version.py"
+version_file_template = """
+### IMPORTS
+### ============================================================================
+## Standard Library
+import datetime
+
+### CONSTANTS
+### ============================================================================
+## Version Information
+## -----------------------------------------------------------------------------
+VERSION = {version!r}
+BUILD_GIT_HASH = {scm_version.node!r}
+BUILD_GIT_HASH_SHORT = {scm_version.node!r}
+BUILD_GIT_BRANCH = {scm_version.branch!r}
+BUILD_GIT_DIRTY = {scm_version.dirty!r}
+BUILD_DATETIME = {scm_version.time!r}
+BUILD_TIMESTAMP = int(BUILD_DATETIME.timestamp())
+
+## Version Information Templates
+## -----------------------------------------------------------------------------
+VERSION_INFO_SHORT = f"{{VERSION}}"
+VERSION_INFO = f"{{VERSION}}@{{BUILD_GIT_HASH_SHORT}}"
+VERSION_INFO_LONG = f"{{VERSION}} ({{BUILD_GIT_BRANCH}}@{{BUILD_GIT_HASH_SHORT}})"
+VERSION_INFO_FULL = (
+    f"{{VERSION}} ({{BUILD_GIT_BRANCH}}@{{BUILD_GIT_HASH}})\\n"
+    f"Built: {{BUILD_DATETIME}}"
+)
+"""
+
+[tool.black]
+line-length = 100

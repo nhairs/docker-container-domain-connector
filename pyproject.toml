@@ -67,6 +67,8 @@ dcdc = "dcdc.application:main"
 dcdc = ["py.typed"]
 
 [tool.setuptools_scm]
+version_scheme = "guess-next-dev"
+local_scheme = "dirty-tag"
 git_describe_command = [
     "git",
     "describe",
@@ -90,7 +92,7 @@ import datetime
 ## -----------------------------------------------------------------------------
 VERSION = {version!r}
 BUILD_GIT_HASH = {scm_version.node!r}
-BUILD_GIT_HASH_SHORT = {scm_version.node!r}
+BUILD_GIT_HASH_SHORT = BUILD_GIT_HASH[:8] if BUILD_GIT_HASH is not None else None
 BUILD_GIT_BRANCH = {scm_version.branch!r}
 BUILD_GIT_DIRTY = {scm_version.dirty!r}
 BUILD_DATETIME = {scm_version.time!r}

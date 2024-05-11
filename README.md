@@ -70,17 +70,16 @@ dig some.container.dcdc
 
 ## Usage
 
+The main application is provided by the `dcdc` command.
+
 ```
-usage: dcdc [-h] [-c CONFIG_PATH] [-v] [--log-dir PATH] [--version] [--host HOST] [--port PORT]
-            [--tcp | --udp] [--root-domain ROOT_DOMAIN] [--ips]
+usage: dcdc [-h] [-v] [--log-dir PATH] [--version] [--host HOST] [--port PORT] [--tcp | --udp]
+            [--root-domain ROOT_DOMAIN]
 
 dcdc (Docker Container Domain Connector) is a dns server that allows mapping docker containers to their currently running bridge ip address.
 
 options:
   -h, --help            show this help message and exit
-  -c CONFIG_PATH, --config CONFIG_PATH
-                        Add a config file to parse. Config files are parsed in the order they are
-                        added with values being merged into the previously parsed config.
   -v, --verbose         Increase logging verbosity
   --log-dir PATH        Set where log files should be stored. Defaults to /var/tmp
   --version             show program's version number and exit
@@ -91,8 +90,9 @@ options:
   --root-domain ROOT_DOMAIN
                         Root domain for queries (e.g. <query>.<root>). Does not have to be a TLD, can
                         be any level of domain. Defaults to ".dcdc".
-  --ips                 Print available IPs and exit
 ```
+
+This package also provies the `dcdc-ips` utility command which will print available IP addresses.
 
 ## Licence
 This project is licenced under the MIT Licence - see [`LICENCE`](https://github.com/nhairs/docker-container-domain-connector/blob/main/LICENCE).

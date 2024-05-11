@@ -4,15 +4,12 @@
 from __future__ import annotations
 
 ## Standard Library
-import argparse
 from dataclasses import dataclass
-import logging
-import sys
 import time
 
 ## Installed
 from docker import DockerClient
-import netifaces
+import ifaddr
 import nserver
 import pillar.application
 
@@ -21,26 +18,37 @@ from . import _version
 
 ### CLASSES
 ### ============================================================================
-_APP = None
+_APP: pillar.application.Application
 
 
 ### FUNCTIONS
 ### ============================================================================
-def get_available_ips():
+def get_available_ips() -> list[str]:
     """Get all available IPv4 Address on this machine."""
     # Source: https://stackoverflow.com/a/274644
-    ip_list = []
-    for interface in netifaces.interfaces():
-        for link in netifaces.ifaddresses(interface).get(netifaces.AF_INET, []):
-            ip_list.append(link["addr"] + f" ({interface})")
+    ip_list: list[str] = []
+    for adaptor in ifaddr.get_adapters():
+        for _ip in adaptor.ips:
+            ip = _ip.ip
+            if isinstance(ip, str):
+                # IPv4
+                ip_list.append(f"{ip}\t({adaptor.nice_name})")
+            elif isinstance(ip, tuple):
+                # IPv6
+                # Currently only IPv4
+                pass
+                # ip_list.append(f"{ip[0]}]\t({adapter.nice_name})")
+            else:
+                raise ValueError(f"Unsupported IP: {ip!r}")
 
+    ip_list.sort()
     # shortcut for all
-    ip_list.append("0.0.0.0 (all above)")
+    ip_list.append("0.0.0.0\t(all)")
     return ip_list
 
 
 def main(argv=None):
-    """Main function for use with setup.py"""
+    """Main function entrypoint for dcdc"""
     global _APP  # pylint: disable=global-statement
 
     _APP = Application(argv)
@@ -48,10 +56,18 @@ def main(argv=None):
     return exit_code
 
 
+def ips_main() -> None:
+    """Main function entrypoint for dcdc-ips"""
+    print("\n".join(get_available_ips()))
+    return
+
+
 ### CLASSES
 ### ============================================================================
 @dataclass
 class CachedContainer:
+    """Dataclass for caching container info"""
+
     container_ids: dict[str, str]
     container_name: str
     project_name: str
@@ -77,19 +93,22 @@ class Application(pillar.application.Application):
         )
     )
 
-    def setup(self) -> None:
-        super().setup()
+    config_args_enabled = False
+    config_required = False
+
+    logging_manifest = pillar.application.LoggingManifest(additional_namespaces=["nserver"])  # type: ignore[call-arg]
+
+    def setup(self, *args, **kwargs) -> None:
+        super().setup(*args, **kwargs)
         self.nserver = self.get_nserver()
         self.container_cache: dict[str, CachedContainer] = {}
         self.docker = DockerClient()
         return
 
     def main(self) -> None:
-        if self.args.ips:
-            print("\n".join(get_available_ips()))
-            return
-
+        self.info(f"Starting server on {self.args.transport} {self.args.host}:{self.args.port}")
         self.nserver.run()
+        self.info("Shutting down")
         return
 
     def get_argument_parser(self):
@@ -134,9 +153,6 @@ class Application(pillar.application.Application):
             help='Root domain for queries (e.g. <query>.<root>). Does not have to be a TLD, can be any level of domain. Defaults to ".dcdc".',
         )
 
-        # Misc
-        parser.add_argument("--ips", action="store_true", help="Print available IPs and exit")
-
         parser.set_defaults(transport="UDPv4")
         return parser
 
@@ -147,7 +163,8 @@ class Application(pillar.application.Application):
         server.settings.SERVER_TYPE = self.args.transport
         server.settings.SERVER_ADDRESS = self.args.host
         server.settings.SERVER_PORT = self.args.port
-        server.settings.CONSOLE_LOG_LEVEL = logging.WARNING
+        server.settings.CONSOLE_LOG_LEVEL = 100
+        server.settings.FILE_LOG_LEVEL = 1
 
         self.args.root_domain = self.args.root_domain.strip(".")
         server.settings.ROOT_DOMAIN = self.args.root_domain
@@ -156,6 +173,8 @@ class Application(pillar.application.Application):
         return server
 
     def attach_rules(self, server: nserver.NameServer) -> None:
+        """Attach rules to the given nserver instance"""
+
         @server.rule(f"*.*.{server.settings.ROOT_DOMAIN}", ["A", "AAAA"])
         def compose_project_rule(query):
             if query.name not in self.container_cache:
@@ -187,7 +206,8 @@ class Application(pillar.application.Application):
 
         return
 
-    def populate_cache(self):
+    def populate_cache(self) -> None:
+        """Populate self.container_cache"""
         self.info("populating cache")
         cache: dict[str, CachedContainer] = {}
         # Get new entries
@@ -205,11 +225,11 @@ class Application(pillar.application.Application):
             cached_container = cache.get(cache_key, None)
             if cached_container is None:
                 cached_container = CachedContainer(
-                    container_ids=dict(),
+                    container_ids={},
                     container_name=container_name,
                     project_name=project_name,
-                    ipv4_addresses=list(),
-                    ipv6_addresses=list(),
+                    ipv4_addresses=[],
+                    ipv6_addresses=[],
                     last_updated=time.time(),
                 )
                 cache[cache_key] = cached_container

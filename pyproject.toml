@@ -13,7 +13,7 @@ authors = [
 requires-python = ">=3.8"
 dependencies = [
     "docker",
-    "netifaces",
+    "ifaddr",
     "nserver",
     "pillar"
 ]
@@ -47,6 +47,8 @@ GitHub = "https://github.com/nhairs/docker-container-domain-connector"
 
 [project.optional-dependencies]
 dev = [
+    ## Typing
+    "types-docker",
     ## Lint
     "validate-pyproject[all]",
     "black",
@@ -62,6 +64,7 @@ dev = [
 
 [project.scripts]
 dcdc = "dcdc.application:main"
+dcdc-ips = "dcdc.application:ips_main"
 
 [tool.setuptools.package-data]
 dcdc = ["py.typed"]

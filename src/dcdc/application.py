@@ -237,7 +237,7 @@ class Application(pillar.application.Application):
             # update cached_container
 
             cached_container.container_ids[
-                container_labels["com.docker.compose.container-number"]
+                container_labels.get("com.docker.compose.container-number", 0)
             ] = container.id
 
             for network in container.attrs["NetworkSettings"]["Networks"].values():
